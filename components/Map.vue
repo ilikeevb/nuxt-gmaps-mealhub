@@ -130,6 +130,7 @@ export default {
                     },
                     () => {
                         /* Ошибка геолокации */
+                        this.changeLocation(this.location);
                     }
                 );
             } else {
@@ -167,13 +168,13 @@ export default {
         minusRadius() {
             if (this.radius !== 0) {
                 this.radius -= 1;
-                this.changeRadius();
+                this.changeLocation(this.location);
             }
         },
         plusRadius() {
             if (this.radius !== this.radiusList.length - 1) {
                 this.radius += 1;
-                this.changeRadius();
+                this.changeLocation(this.location);
             }
         },
     },
