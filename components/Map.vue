@@ -126,6 +126,7 @@ export default {
                             lat: position.coords.latitude,
                             lng: position.coords.longitude,
                         };
+                        this.changeLocation(this.location);
                     },
                     () => {
                         /* Ошибка геолокации */
@@ -136,8 +137,9 @@ export default {
                     Доступ к геолокации не разрешен
                     Можно выводить на экран сообщение об ошибке
                 */
+                this.changeLocation(this.location);
             }
-            this.changeLocation(this.location);
+            
         },
         changeRadius() {
             this.$refs.gMap.map.setZoom(this.radiusList[this.radius].zoom);
