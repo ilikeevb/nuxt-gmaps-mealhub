@@ -1,18 +1,10 @@
 <template>
-    <div>
-        <img :src="icon">
-
-        <GMap ref="gMap" :center="{ lat: location.lat, lng: location.lng }" language="ru" :options="mapOptions"
-            :zoom="zoom">
-            <GMapCircle ref="gCircleRadius" :options="circleRadiusOptions"></GMapCircle>
-            <GMapMarker :position="{ lat: location.lat, lng: location.lng }" :options="{
-              icon: icon,
-            }">
-
-            </GMapMarker>
-        </GMap>
+    <GMap @click="mapClick" id="map" ref="gMap" language="ru" :center="location" :options="mapOptions">
+        <GMapCircle ref="gCircleRadius" :options="circleRadiusOptions"></GMapCircle>
+        <GMapMarker ref="gMarker" :position="location" :options="{ icon: icon }">
+        </GMapMarker>
         <div id="control-buttons">
-            <button id="location-button">
+            <button id="location-button" @click="getLocation">
                 <img src="~@/assets/location.svg" />
             </button>
             <div id="radius-control">
@@ -27,35 +19,31 @@
                 </button>
             </div>
         </div>
-    </div>
+    </GMap>
 </template>
 
 <script>
-import logo from '../assets/point.svg'
 import mapStyle from '../assets/mapStyle.js'
 export default {
     name: 'MapComponent',
     data() {
         return {
-            icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHUSURBVHgB5VU7SwNBEJ7LmZBgMC+UdKKx0MZCG2srwcbCB2glpFDQ3to/IegvSAIWPrBJIySlipUKKqYLaHJ3iWIelzu/DTk8j71H7MQPltmZnflmZ3b3juivQ3BzCIfDI4FAYBvTRV3XR7tBglCCOIP9oFwuv/46QSwWWwfZIaaDNi7vGOlqtZqhfhPE4/EViAy5V6ljE8uVSuXYc4JkMjncarUeMR0ib5Db7fZEvV6vWBd8PG+Q73LIFYyj3lAsa1G/37/D4+JWgPbcQkybd9jpdGYVRXlmSiQSSYmieMWmhgMuwI0kSTPkpQJgzKJnDfJuKYryBJH7sVNBSPGI7BKoFl3n+GguMY4JHiz6GtoybiisRczmEtPFAM+Ifl6i5DmTKYqeX+Nssj19lUz9N2J4XNxDTiQSkwi4oz6ADU3hLdxb7dwW9RyL5B0FHrltAgZUsEce4eRrmwB3ugCRJ3fk4VvsOwEDHtcWxKeDy4emaWmHdRKdFpvNphQKhdhFmOet42D3sftTJw7X/wHgw/U8h1ywkJ/gYJeI/wi/g8kdmqqqG5Alk62Er+emG7nXBFSr1aroNSNknwOVzZnNS6xIHtFoNF6CweAbpheyLOfo3+ALfrSuzJ1F8EsAAAAASUVORK5CYII=",
-            radius: 7,
+            icon: require('../assets/point.svg'),
+            iconItemPoint: require('../assets/item-point.svg'),
+            radius: 1,
             radiusList: [
-                { name: "500м", value: 500 },
-                { name: "1км", value: 1000 },
-                { name: "2км", value: 2000 },
-                { name: "3км", value: 3000 },
-                { name: "4км", value: 4000 },
-                { name: "5км", value: 5000 },
-                { name: "10км", value: 10000 },
-                { name: "20км", value: 20000 },
-                { name: "30км", value: 30000 },
-                { name: "40км", value: 40000 },
-                { name: "50км", value: 50000 },
+                { name: "500м", value: 500, zoom: 15 },
+                { name: "1км", value: 1000, zoom: 14 },
+                { name: "2км", value: 2000, zoom: 13 },
+                { name: "3км", value: 3000, zoom: 12 },
+                { name: "4км", value: 4000, zoom: 12 },
+                { name: "5км", value: 5000, zoom: 12 },
+                { name: "10км", value: 10000, zoom: 11 },
+                { name: "20км", value: 20000, zoom: 10 },
+                { name: "30км", value: 30000, zoom: 9 },
+                { name: "40км", value: 40000, zoom: 9 },
+                { name: "50км", value: 50000, zoom: 8 },
             ],
-            zoom: 15,
-            location: {
-                lat: 59.931469339578584, lng: 30.295400903735356
-            },
             mapOptions: {
                 styles: mapStyle, // подключаем стили карты
                 // отключаем все стандартные кнопки карты
@@ -69,30 +57,121 @@ export default {
                 fullscreenControl: false,
             },
             circleRadiusOptions: {
+                clickable: false,
                 strokeColor: '#FF0000',
                 strokeOpacity: 1,
                 strokeWeight: 2,
                 fillColor: '#FFFFFF',
                 fillOpacity: 0,
-                center: { lat: 59.931469339578584, lng: 30.295400903735356 },
-                radius: 15000
+                radius: 10000,
+                center: {
+                    lat: 59.931469339578584, lng: 30.295400903735356
+                }
             },
+            location: {
+                lat: 59.931469339578584, lng: 30.295400903735356
+            },
+            markersList: []
         }
     },
     computed: {
+        items() {
+            return this.$store.getters.GET_ITEMS;
+        },
+        currentCard() {
+            return this.$store.getters.GET_CURRENT_CARD;
+        }
+    },
+    watch: {
+        items() {
+            for (let marker of this.markersList) {
+                marker.setMap(null);
+            }
+            this.markersList = [];
 
+            const iconItemPoint = this.iconItemPoint;
+            for (let item of this.items) {
+                let marker = new this.$refs.gMap.google.maps.Marker({
+                    position: {
+                        lat: Number(item.latitude),
+                        lng: Number(item.longitude)
+                    },
+                    icon: iconItemPoint
+                });
+                marker.setMap(this.$refs.gMap.map);
+                this.markersList.push(marker)
+            }
+        },
+        currentCard(card) {
+            const location = { lat: Number(card.latitude), lng: Number(card.longitude) };
+
+            this.changeLocation(location);
+        }
+    },
+    mounted() {
+        window.onload = this.getLocation;
     },
     methods: {
+        mapClick(e) {
+            this.location = e.event.latLng;
+            this.changeLocation(this.location);
+        },
+        getLocation() {
+            this.$store.commit("SET_COMPUTE_DISTANCE", this.$refs.gMap.google.maps.geometry.spherical.computeDistanceBetween);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.location = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                        };
+                    },
+                    () => {
+                        /* Ошибка геолокации */
+                    }
+                );
+            } else {
+                /* 
+                    Доступ к геолокации не разрешен
+                    Можно выводить на экран сообщение об ошибке
+                */
+            }
+            this.changeLocation(this.location);
+        },
+        changeRadius() {
+            this.$refs.gMap.map.setZoom(this.radiusList[this.radius].zoom);
+            this.$refs.gCircleRadius.circle.setRadius(this.radiusList[this.radius].value)
+        },
+        changeLocation(location) {
+            this.$store.commit("SET_LOCATION_AND_RADIUS", {
+                location: location, radius: this.radius
+            });
+
+            const params = {
+                latitude: typeof location.lat == 'function' ? location.lat() : location.lat,
+                longitude: typeof location.lng == 'function' ? location.lng() : location.lng,
+                radius: this.radius
+            };
+
+            this.$store.dispatch("GET_ITEMS", params);
+
+            this.$refs.gMap.map.setCenter(location);
+            this.$refs.gCircleRadius.circle.setCenter(location);
+            this.$refs.gMarker.marker.setPosition(location);
+
+            this.changeRadius();
+        },
         minusRadius() {
             if (this.radius !== 0) {
                 this.radius -= 1;
-                this.$refs.gCircleRadius.circle.setRadius(this.radiusList[this.radius].value)
+                this.changeRadius();
             }
         },
         plusRadius() {
             if (this.radius !== this.radiusList.length - 1) {
                 this.radius += 1;
-                this.$refs.gCircleRadius.circle.setRadius(this.radiusList[this.radius].value)
+                this.changeRadius();
             }
         },
     },
@@ -100,7 +179,11 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+#map {
+    position: relative;
+}
+
 #control-buttons {
     box-sizing: border-box;
     position: absolute;
