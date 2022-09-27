@@ -3,7 +3,7 @@
         <div v-if="items.length" class="mobile-cards-list">
             <Card v-for="item in items" :key="item.id" :data="item" />
         </div>
-        <div v-else class="empty-card-list">
+        <div v-else class="mobile-cards-list empty-card-list">
             <CardInfo />
         </div>
     </div>
@@ -28,6 +28,15 @@ export default {
         }
     },
     mounted() {
+        let list = document.querySelector(".mobile-cards-list");
+        list.addEventListener("scroll", () => {
+            if ((list.scrollWidth - 328 < list.scrollLeft + list.clientWidth) && this.requestCheck) {
+                this.requestCheck = false;
+                this.$store.dispatch("GET_ITEMS_FROM_NEXT_PAGE");
+            }
+        })
+    },
+    methods: {
 
     }
 }
@@ -52,8 +61,8 @@ export default {
 
 .empty-card-list {
     width: calc(100vw - 20px);
-    flex-shrink: 0;
     display: flex;
+    flex-shrink: 0;
     justify-content: center;
 }
 
